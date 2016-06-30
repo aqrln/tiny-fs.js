@@ -99,7 +99,7 @@ function ls() {
   for (var i = 0; i < MAX_LINKS; i++) {
     var offset = i * (FILENAME_SIZE + SIZE_BYTES);
     if (linksTable.readUInt8(offset) === 0) continue;
-    var fname = linksTable.toString('utf-8', offset, FILENAME_SIZE).replace(/\0/g, '');
+    var fname = linksTable.slice(offset, offset + FILENAME_SIZE).toString().replace(/\0/g, '');
     var id = linksTable.readUInt16LE(offset + FILENAME_SIZE);
     links[fname] = id;
   }
