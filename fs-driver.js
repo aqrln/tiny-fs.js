@@ -28,12 +28,12 @@ function mount(filename) {
 }
 
 function loadBlocksMap() {
-  var buffer = Buffer.from(blocksMap);
+  var buffer = Buffer.from(blocksMap.buffer);
   fs.readSync(imageFd, buffer, 0, buffer.length, BLOCKS_MAP_OFFSET);
 }
 
 function saveBlocksMap() {
-  var buffer = Buffer.from(blocksMap);
+  var buffer = Buffer.from(blocksMap.buffer);
   fs.writeSync(imageFd, buffer, 0, buffer.length, BLOCKS_MAP_OFFSET);
 }
 
@@ -45,15 +45,21 @@ function umount() {
 }
 
 function markBlockFree(id) {
-  var byte = id / 8;
-  var bit = id % 8;
+  var byte = id >> 3;
+  var bit = id & 7;
   blocksMap[byte] &= ~(1 << bit);
 }
 
 function markBlockBusy(id) {
-  var byte = id / 8;
-  var bit = id % 8;
+  var byte = id >> 3;
+  var bit = id & 7;
   blocksMap[byte] |= 1 << bit;
+}
+
+function isBlockFree(id) {
+  var byte = id >> 3;
+  var bit = id & 7;
+  return !(blocksMap[byte] & (1 << bit));
 }
 
 // Create a filesystem
@@ -72,13 +78,13 @@ function mkfs(filename) {
 //
 function filestat(id) {
   var array = new Uint16Array(NODE_SIZE / 2);
-  var buffer = Buffer.from(array);
+  var buffer = Buffer.from(array.buffer);
 
   fs.readSync(imageFd, buffer, 0, buffer.length, LINKS_TABLE_SIZE + id * NODE_SIZE);
 
   return {
     activeLinks: array[0],
-    blocks: array.slice(2, 2 + array[1])
+    blocks: Array.prototype.slice.call(array, 2, 2 + array[1])
   };
 }
 
@@ -93,7 +99,7 @@ function ls() {
   for (var i = 0; i < MAX_LINKS; i++) {
     var offset = i * (FILENAME_SIZE + SIZE_BYTES);
     if (linksTable.readUInt8(offset) === 0) continue;
-    var fname = linksTable.toString('utf-8', offset, FILENAME_SIZE).replace('\u0000', '');
+    var fname = linksTable.toString('utf-8', offset, FILENAME_SIZE).replace(/\0/g, '');
     var id = linksTable.readUInt16LE(offset + FILENAME_SIZE);
     links[fname] = id;
   }
@@ -104,7 +110,28 @@ function ls() {
 // Create a new file
 //
 function create(name) {
-  // TODO
+  var files = ls();
+  if (files[name] !== undefined) {
+    throw new Error('file already exists');
+  }
+
+  for (var id = 0; id < MAX_NODES; id++) {
+    var node = filestat(id);
+    if (node.activeLinks === 0) {
+      break;
+    }
+  }
+
+  if (id === MAX_NODES) {
+    throw new Error('filesystem limit exceeded');
+  }
+
+  node.activeLinks = 1;
+  node.blocks = [];
+  writeNode(id, node);
+
+  files[name] = id;
+  writeLinksTable(files);
 }
 
 // Open a file
@@ -191,7 +218,7 @@ function unlink(name) {
 
 function writeNode(id, node) {
   var array = new Uint16Array(NODE_SIZE / 2);
-  var buffer = Buffer.from(array);
+  var buffer = Buffer.from(array.buffer);
 
   array[0] = node.activeLinks;
   array[1] = node.blocks.length;
@@ -205,7 +232,41 @@ function writeNode(id, node) {
 // Change the size of a file
 //
 function truncate(name, size) {
-  // TODO
+  var files = ls();
+  var id = files[name];
+  if (id === undefined) {
+    throw new Error('file not found');
+  }
+
+  var newBlocksCount = Math.ceil(size / BLOCK_SIZE);
+  var node = filestat(id);
+  
+  if (newBlocksCount === node.blocks.length) {
+    return;
+  }
+
+  while (newBlocksCount < node.blocks.length) {
+    var blockId = node.blocks.pop();
+    markBlockFree(blockId);
+  }
+
+  while (newBlocksCount > node.blocks.length) {
+    var blockId = allocateBlock();
+    node.blocks.push(blockId);
+  }
+
+  saveBlocksMap();
+  writeNode(id, node);
+}
+
+function allocateBlock() {
+  for (var i = 0; i < MAX_BLOCKS; i++) {
+    if (isBlockFree(i)) {
+      markBlockBusy(i);
+      return i;
+    }
+  }
+  throw new Error('no free blocks left on device');
 }
 
 module.exports = {

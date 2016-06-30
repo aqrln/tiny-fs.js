@@ -55,12 +55,15 @@ var commands = {
   },
 
   create: (name) => {
+    fsDriver.create(name);
   },
 
   open: (name) => {
+    console.log(fsDriver.open(name));
   },
 
   close: (fd) => {
+    fsDriver.close(+fd);
   },
 
   read: (fd, offset, size) => {
@@ -74,12 +77,15 @@ var commands = {
   },
 
   link: (oldName, newName) => {
+    fsDriver.link(oldName, newName);
   },
 
   unlink: (name) => {
+    fsDriver.unlink(name);
   },
 
   truncate: (name, size) => {
+    fsDriver.truncate(name, +size);
   }
 };
 
