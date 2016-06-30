@@ -14,12 +14,27 @@ const NODES_TABLE_SIZE = NODE_SIZE * MAX_NODES;
 const BLOCKS_MAP_SIZE = MAX_BLOCKS / 8;
 const BLOCKS_POOL_SIZE = MAX_BLOCKS * BLOCK_SIZE;
 
+const BLOCKS_MAP_OFFSET = LINKS_TABLE_SIZE + NODES_TABLE_SIZE;
+
 var imageFd = null;
+
+var blocksMap = new Uint8Array(BLOCKS_MAP_SIZE);
 
 // Mount a filesystem
 //
 function mount(filename) {
   imageFd = fs.openSync(filename, 'r+');
+  loadBlocksMap();
+}
+
+function loadBlocksMap() {
+  var buffer = Buffer.from(blocksMap);
+  fs.readSync(imageFd, buffer, 0, buffer.length, BLOCKS_MAP_OFFSET);
+}
+
+function saveBlocksMap() {
+  var buffer = Buffer.from(blocksMap);
+  fs.writeSync(imageFd, buffer, 0, buffer.length, BLOCKS_MAP_OFFSET);
 }
 
 // Unmount a filesystem
@@ -27,6 +42,18 @@ function mount(filename) {
 function umount() {
   fs.closeSync(imageFd);
   imageFd = null;
+}
+
+function markBlockFree(id) {
+  var byte = id / 8;
+  var bit = id % 8;
+  blocksMap[byte] &= ~(1 << bit);
+}
+
+function markBlockBusy(id) {
+  var byte = id / 8;
+  var bit = id % 8;
+  blocksMap[byte] |= 1 << bit;
 }
 
 // Create a filesystem
@@ -154,8 +181,9 @@ function unlink(name) {
 
   if (!node.activeLinks) {
     for (blockId of node.blocks) {
-      // TODO free the block
+      markBlockFree(blockId);
     }
+    saveBlocksMap();
   }
 
   writeNode(id, node);
