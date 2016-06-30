@@ -8,6 +8,7 @@ var rl = readline.createInterface({
     var completions = [
       'mount', 'umount', 'filestat', 'ls', 'create', 'open', 'close',
       'read', 'write', 'link', 'unlink', 'truncate', 'echo', 'exit',
+      'mkfs'
     ];
     var hints = completions.filter(c => c.startsWith(line));
     return [hints.length ? hints : completions, line];
@@ -26,6 +27,10 @@ var commands = {
     process.exit(0);
   },
 
+  mkfs: (filename) => {
+    fsDriver.mkfs(filename);
+  },
+
   mount: (filename) => {
     fsDriver.mount(filename);
   },
@@ -38,6 +43,10 @@ var commands = {
   },
 
   ls: () => {
+    var files = fsDriver.ls();
+    for (var name in files) {
+      console.log(`${name}: ${files[name]}`);
+    }
   },
 
   create: (name) => {
@@ -53,10 +62,10 @@ var commands = {
   },
 
   write: (fd, offset, size) => {
-    rl.pause();
-    var data = process.stdin.read(10);
-    console.log(data.toString());
-    rl.resume();
+    rl.question('Data: ', (data) => {
+      //
+      rl.prompt();
+    });
   },
 
   link: (oldName, newName) => {

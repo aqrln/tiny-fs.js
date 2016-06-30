@@ -38,3 +38,6 @@ jspm_packages
 
 # mocOS
 .DS_Store
+
+# FS image files
+*.img
