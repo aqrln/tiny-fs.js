@@ -44,7 +44,15 @@ function mkfs(filename) {
 // Get info about an FS node
 //
 function filestat(id) {
-  // TODO
+  var array = new Uint16Array(NODE_SIZE / 2);
+  var buffer = Buffer.from(array);
+
+  fs.readSync(imageFd, buffer, 0, buffer.length, LINKS_TABLE_SIZE + id * NODE_SIZE);
+
+  return {
+    activeLinks: array[0],
+    blocks: array.slice(2, 2 + array[1])
+  };
 }
 
 // List links

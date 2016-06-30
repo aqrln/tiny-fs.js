@@ -40,6 +40,11 @@ var commands = {
   },
 
   filestat: (id) => {
+    var stat = fsDriver.filestat(+id);
+    console.log('Stats for node', id);
+    console.log('Active links:', stat.activeLinks);
+    console.log('Blocks count:', stat.blocks.length);
+    console.log('Block list:', stat.blocks.join(', '));
   },
 
   ls: () => {
