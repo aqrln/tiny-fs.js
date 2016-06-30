@@ -107,13 +107,71 @@ function write(fd, offset, size, data) {
 // Create a new link
 //
 function link(oldName, newName) {
-  // TODO
+  var files = ls();
+  var id = files[oldName];
+
+  if (id === undefined) {
+    throw new Error('file not found');
+  }
+
+  files[newName] = id;
+  writeLinksTable(files);
+
+  var node = filestat(id);
+  node.activeLinks++;
+  writeNode(id, node);
+}
+
+function writeLinksTable(files) {
+  var buffer = Buffer.alloc(LINKS_TABLE_SIZE);
+
+  Object.keys(files).forEach((name, index) => {
+    var id = files[name];
+    var offset = index * (FILENAME_SIZE + SIZE_BYTES);
+
+    buffer.write(name, offset);
+    buffer.writeUInt16LE(id, offset + FILENAME_SIZE);
+  });
+
+  fs.writeSync(imageFd, buffer, 0, buffer.length, 0);
 }
 
 // Remove a link
 //
 function unlink(name) {
-  // TODO
+  var files = ls();
+  var id = files[name];
+
+  if (id === undefined) {
+    throw new Error('file not found');
+  }
+
+  delete files[name];
+  writeLinksTable(files);
+
+  var node = filestat(id);
+  node.activeLinks--;
+
+  if (!node.activeLinks) {
+    for (blockId of node.blocks) {
+      // TODO free the block
+    }
+  }
+
+  writeNode(id, node);
+}
+
+function writeNode(id, node) {
+  var array = new Uint16Array(NODE_SIZE / 2);
+  var buffer = Buffer.from(array);
+
+  array[0] = node.activeLinks;
+  array[1] = node.blocks.length;
+  for (var i = 0; i < node.blocks.length; i++) {
+    array[2 + i] = node.blocks[i];
+  }
+
+  fs.writeSync(imageFd, buffer, 0, buffer.length, LINKS_TABLE_SIZE + id * NODE_SIZE);
 }
 
 // Change the size of a file
