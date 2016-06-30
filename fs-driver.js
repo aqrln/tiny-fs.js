@@ -9,7 +9,7 @@ const MAX_BLOCKS = 8192;
 
 const SIZE_BYTES = 2;
 
-const LINKS_TABLE_SIZE = SIZE_BYTES + MAX_LINKS * (FILENAME_SIZE + SIZE_BYTES);
+const LINKS_TABLE_SIZE = MAX_LINKS * (FILENAME_SIZE + SIZE_BYTES);
 const NODES_TABLE_SIZE = NODE_SIZE * MAX_NODES;
 const BLOCKS_MAP_SIZE = MAX_BLOCKS / 8;
 const BLOCKS_POOL_SIZE = MAX_BLOCKS * BLOCK_SIZE;
@@ -55,9 +55,9 @@ function ls() {
 
   var links = {};
 
-  var linksCount = linksTable.readUInt16LE(0);
-  for (var i = 0; i < linksCount; i++) {
-    var offset = SIZE_BYTES + i * (FILENAME_SIZE + SIZE_BYTES);
+  for (var i = 0; i < MAX_LINKS; i++) {
+    var offset = i * (FILENAME_SIZE + SIZE_BYTES);
+    if (linksTable.readUInt8(offset) === 0) continue;
     var fname = linksTable.toString('utf-8', offset, FILENAME_SIZE).replace('\u0000', '');
     var id = linksTable.readUInt16LE(offset + FILENAME_SIZE);
     links[fname] = id;

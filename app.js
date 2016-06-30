@@ -84,7 +84,11 @@ rl.on('line', (input) => {
   if (argv.length > 0) {
     var command = commands[argv[0]];
     if (command) {
-      command.apply(commands, argv.slice(1));
+      try {
+        command.apply(commands, argv.slice(1));
+      } catch (e) {
+        console.error(e);
+      }
     } else {
       console.log('Unknown command');
     }
