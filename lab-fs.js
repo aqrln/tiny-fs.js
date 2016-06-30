@@ -3,7 +3,15 @@ var fsDriver = require('./fs-driver');
 
 var rl = readline.createInterface({
   input: process.stdin,
-  output: process.stdout
+  output: process.stdout,
+  completer: (line) => {
+    var completions = [
+      'mount', 'umount', 'filestat', 'ls', 'create', 'open', 'close',
+      'read', 'write', 'link', 'unlink', 'truncate', 'echo', 'exit',
+    ];
+    var hints = completions.filter(c => c.startsWith(line));
+    return [hints.length ? hints : completions, line];
+  }
 });
 
 rl.setPrompt('\n> ');
@@ -45,8 +53,10 @@ var commands = {
   },
 
   write: (fd, offset, size) => {
+    rl.pause();
     var data = process.stdin.read(10);
     console.log(data.toString());
+    rl.resume();
   },
 
   link: (oldName, newName) => {
@@ -60,7 +70,6 @@ var commands = {
 };
 
 rl.on('line', (input) => {
-  console.log(input);
   var argv = input.split(' ');
 
   if (argv.length > 0) {
