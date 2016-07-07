@@ -1,5 +1,5 @@
 {
-  "name": "lab-fs",
+  "name": "tiny-fs.js",
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
@@ -8,13 +8,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aqrln/kpi-os-lab4.git"
+    "url": "git+https://github.com/aqrln/tiny-fs.js.git"
   },
   "author": "Alexey Orlenko <eaglexrlnk@gmail.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/aqrln/kpi-os-lab4/issues"
+    "url": "https://github.com/aqrln/tiny-fs.js/issues"
   },
-  "homepage": "https://github.com/aqrln/kpi-os-lab4#readme",
-  "private": "true"
+  "homepage": "https://github.com/aqrln/tiny-fs.js#readme"
 }
