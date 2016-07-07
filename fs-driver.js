@@ -20,6 +20,9 @@ var imageFd = null;
 
 var blocksMap = new Uint8Array(BLOCKS_MAP_SIZE);
 
+var openFiles = {};
+var nextFd = 0;
+
 // Mount a filesystem
 //
 function mount(filename) {
@@ -137,13 +140,26 @@ function create(name) {
 // Open a file
 //
 function open(name) {
-  // TODO
+  var files = ls();
+  var id = files[name];
+  if (id === undefined) {
+    throw new Error('file not found');
+  }
+
+  var fd = nextFd++;
+  openFiles[fd] = {
+    name: name,
+    id: id,
+    node: filestat(id)
+  };
+
+  return fd;
 }
 
 // Close a file
 //
 function close(fd) {
-  // TODO
+  delete openFiles[fd];
 }
 
 // Read data from a file
