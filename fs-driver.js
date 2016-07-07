@@ -1,4 +1,4 @@
-var fs = require('fs');
+const fs = require('fs');
 
 const FILENAME_SIZE = 256;
 const MAX_LINKS = 2048;
